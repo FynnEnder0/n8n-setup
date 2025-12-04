@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   traefik:
     image: "traefik"
@@ -20,12 +22,12 @@ services:
     volumes:
       - traefik_data:/letsencrypt
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - app_network
 
   n8n:
     image: docker.n8n.io/n8nio/n8n
     restart: always
-    ports:
-      - "127.0.0.1:5678:5678"
     labels:
       - traefik.enable=true
       - traefik.http.routers.n8n.rule=Host(`${SUBDOMAIN}.${DOMAIN_NAME}`)
@@ -49,9 +51,19 @@ services:
       - WEBHOOK_URL=https://${SUBDOMAIN}.${DOMAIN_NAME}/
       - GENERIC_TIMEZONE=${GENERIC_TIMEZONE}
       - N8N_PROXY_HOPS=1
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=n8n
+      - DB_POSTGRESDB_USER=postgres
+      - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD:-changeme123}
     volumes:
       - n8n_data:/home/node/.n8n
       - /local-files:/files
+    networks:
+      - app_network
+    depends_on:
+      - postgres
 
   postgres:
     image: postgres:15-alpine
@@ -63,11 +75,11 @@ services:
       POSTGRES_DB: postgres
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
-      - ./volumes/postgres:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+      - postgres_data:/var/lib/postgresql/data/pgdata
+    networks:
+      - app_network
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -77,13 +89,15 @@ services:
       - max_connections=200
       - -c
       - shared_buffers=256MB
+
+networks:
+  app_network:
+    driver: bridge
+
 volumes:
   traefik_data:
     external: true
   n8n_data:
     external: true
-  postgres:
+  postgres_data:
     external: true
-
-
-
