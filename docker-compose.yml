@@ -60,7 +60,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme123}
-      POSTGRES_DB: postgres
+      POSTGRES_DB: n8n
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - ./volumes/postgres:/var/lib/postgresql/data
@@ -79,11 +79,8 @@ services:
       - shared_buffers=256MB
 volumes:
   traefik_data:
-    external: true
   n8n_data:
-    external: true
   postgres:
-    external: true
 
 
 
