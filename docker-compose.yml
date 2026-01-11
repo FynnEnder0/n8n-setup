@@ -1,7 +1,13 @@
+version: '3.8'
 
 volumes:
   db_storage:
   n8n_storage:
+
+networks:
+  default:
+    name: supabase-n8n-net
+    external: true
 
 services:
   postgres:
@@ -32,10 +38,10 @@ services:
       - DB_POSTGRESDB_DATABASE=${POSTGRES_DB}
       - DB_POSTGRESDB_USER=${POSTGRES_NON_ROOT_USER}
       - DB_POSTGRESDB_PASSWORD=${POSTGRES_NON_ROOT_PASSWORD}
+      # WICHTIG: Damit Webhooks von außen gehen
+      - WEBHOOK_URL=http://72.61.84.7/:5678
     ports:
       - 5678:5678
-    links:
-      - postgres
     volumes:
       - n8n_storage:/home/node/.n8n
     depends_on:
